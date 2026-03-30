@@ -5,6 +5,7 @@ import Stats from './components/Stats'
 import UserCard, { User } from './components/UserCard'
 import Modal from './components/Modal'
 import Toast from './components/Toast'
+import { apiService } from './services/api'
 import './App.css'
 
 function App() {
@@ -31,9 +32,7 @@ function App() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('http://localhost:3000/api/users')
-      if (!response.ok) throw new Error('Failed to fetch data')
-      const data = await response.json()
+      const data = await apiService.fetchUsers()
       setUsers(data)
     } catch (err: any) {
       setError(err.message)
@@ -49,12 +48,7 @@ function App() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch('http://localhost:3000/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser),
-      })
-      if (!response.ok) throw new Error('Failed to create user')
+      await apiService.createUser(newUser)
       showToast('User created successfully')
       setIsUserModalOpen(false)
       setNewUser({ name: '', email: '' })
@@ -67,10 +61,7 @@ function App() {
   const handleDeleteUser = async (id: number) => {
     if (!confirm('Are you sure you want to delete this user and all their posts?')) return
     try {
-      const response = await fetch(`http://localhost:3000/api/users/${id}`, {
-        method: 'DELETE',
-      })
-      if (!response.ok) throw new Error('Failed to delete user')
+      await apiService.deleteUser(id)
       showToast('User deleted')
       fetchData()
     } catch (err: any) {
@@ -82,15 +73,7 @@ function App() {
     e.preventDefault()
     if (!activeUserId) return
     try {
-      const response = await fetch('http://localhost:3000/api/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newPost, authorId: activeUserId }),
-      })
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create post')
-      }
+      await apiService.createPost({ ...newPost, authorId: activeUserId })
       showToast('Post created successfully')
       setIsPostModalOpen(false)
       setNewPost({ title: '', content: '' })
@@ -103,10 +86,7 @@ function App() {
 
   const handleDeletePost = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/posts/${id}`, {
-        method: 'DELETE',
-      })
-      if (!response.ok) throw new Error('Failed to delete post')
+      await apiService.deletePost(id)
       showToast('Post deleted')
       fetchData()
     } catch (err: any) {
@@ -116,10 +96,7 @@ function App() {
 
   const handleTogglePublish = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/posts/${id}/publish`, {
-        method: 'PATCH',
-      })
-      if (!response.ok) throw new Error('Failed to update post')
+      await apiService.togglePostPublish(id)
       fetchData()
     } catch (err: any) {
       showToast(err.message, 'error')
